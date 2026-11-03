@@ -1,0 +1,3 @@
+warning: /Users/derxu/Documents/code/tresleches/Cargo.toml: `package.edition` is unspecified, defaulting to `2015` while the latest is `2024`
+warning: `tresleches` (manifest) generated 1 warning
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.00s

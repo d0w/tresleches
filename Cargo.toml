@@ -1,0 +1,14 @@
+# [package]
+# name = "tresleches"
+# version = "0.1.0"
+# rust-version = "1.99"
+# edition = "2024"
+# description = "An experimental foundation for decentralized layer-4 routing"
+# license = "MIT"
+# publish = false
+[workspace]
+resolver = "3"
+members = ["mesh_router", "one_shot_test"]
+
+# [dependencies]
+# sha2 = "0.11.1"
