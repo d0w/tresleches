@@ -1,4 +1,6 @@
-/target/
+**target/
 /examples/imports/target/
 /examples
 .DS_Store
+
+/.opencode

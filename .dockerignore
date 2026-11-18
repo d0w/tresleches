@@ -1,0 +1,9 @@
+.git
+.github
+.opencode
+**/target
+**/.DS_Store
+**/*.sock
+**/*.log
+**/*.key
+**/*.pem
