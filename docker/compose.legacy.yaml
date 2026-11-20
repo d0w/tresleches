@@ -1,5 +1,9 @@
+name: tresleches
+
 x-node: &node
-  build: .
+  build:
+    context: ..
+    target: legacy
   image: tresleches-dev
   init: true
   stop_grace_period: 15s

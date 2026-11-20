@@ -16,6 +16,7 @@ import (
 	"github.com/d0w/tresleches/discovery/internal/control"
 	"github.com/d0w/tresleches/discovery/internal/discovery"
 	"github.com/d0w/tresleches/discovery/internal/ipc"
+	"github.com/d0w/tresleches/discovery/internal/tun"
 	"github.com/libp2p/go-libp2p"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/libp2p/go-libp2p/core/network"
@@ -28,6 +29,7 @@ type Config struct {
 	Seeds          string
 	RouterEndpoint string
 	RouterSocket   string
+	TUNName        string
 }
 
 func parseFlags() Config {
@@ -43,6 +45,7 @@ func parseFlags() Config {
 		&cfg.RouterEndpoint, "udp-advertise", "", "Advertised UDP endpoint for router",
 	)
 	flag.StringVar(&cfg.RouterSocket, "router-socket", "", "Local Rust router Unix socket (optional)")
+	flag.StringVar(&cfg.TUNName, "tun-name", "", "TUN interface name")
 
 	flag.Parse()
 
@@ -114,7 +117,20 @@ func run(cfg Config) error {
 	logHandler := slog.NewTextHandler(os.Stdout, logOpts)
 	slog.SetDefault(slog.New(logHandler))
 
-	// Check the local router separately from its advertised UDP endpoint.
+	// Setup TUN interface
+	var tunFile *os.File
+
+	if cfg.TUNName != "" {
+		tunFile, err = tun.Open(cfg.TUNName)
+		if err != nil {
+			return err
+		}
+		defer tunFile.Close()
+
+		slog.Info("TUN interface configured", "interface", tunFile.Name())
+	}
+
+	// Stale: Check the local router separately from its advertised UDP endpoint.
 	var router *ipc.Client
 
 	if cfg.RouterSocket != "" {
@@ -221,12 +237,29 @@ func run(cfg Config) error {
 		}()
 	}
 
+	tunErrors := make(chan error, 1)
+	if tunFile != nil {
+		workers.Add(1)
+		go func() {
+			defer workers.Done()
+			if err := tun.Observe(ctx, tunFile); err != nil {
+				tunErrors <- err
+				stop()
+			}
+		}()
+	}
+
 	<-ctx.Done()
 
 	slog.Info("shutting down...")
 	workers.Wait()
 
-	return nil
+	select {
+	case err := <-tunErrors:
+		return err
+	default:
+		return nil
+	}
 }
 
 // func findEventually(
